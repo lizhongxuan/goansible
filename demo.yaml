@@ -1,0 +1,38 @@
+- name: playbook1
+  strategy: liner
+  tasks:
+    - name: task2
+      shell: ls
+- name: playbook2
+  strategy: free
+  tasks:
+    - name: task1
+      shell: |
+        if [ -f /etc/os-release ]; then
+          id=`cat /etc/os-release | grep -e "^ID=" | awk -F '=' '{print $2}' | sed 's/\"//g'`
+          if [[ $id == "rhel" ]]; then
+            id="redhat"
+          fi
+          echo $id
+        else
+          echo "none"
+        fi
+      show_shell: true
+      register: os
+    - name: task2
+      shell: ls
+    - name: task3
+      copy:
+        src: /etc/aaa
+        dest: /etc/bbb/
+        mode: 0644
+- name: playbook3
+  strategy: liner
+  tasks:
+    - name: task2
+      shell: ls
+- name: playbook4
+  strategy: liner
+  tasks:
+    - name: task2
+      shell: ls

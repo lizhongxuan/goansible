@@ -25,7 +25,8 @@ type Task struct {
 	Retry        int64                  `yaml:"retry,omitempty"`       // 重试次数, 默认为0
 	Delay        int64                  `yaml:"delay,omitempty"`       // 重试之间的延迟时间
 	Until        string                 `yaml:"until,omitempty"`       // 重试的条件
-	WithItems    []interface{}          `yaml:"with_items,omitempty"`  // 循环关键字，用于循环执行任务
+	WithItems    []interface{}          `yaml:"with_items,omitempty"`  // 循环关键字，用于循环执行任务,生成参数{{ item }}
+	Loop         []interface{}          `yaml:"loop,omitempty"`        // 循环关键字,通WithItems
 	Notify       []string               `yaml:"notify,omitempty"`      // 通知处理程序
 	When         string                 `yaml:"when,omitempty"`        // 条件语句，用于有条件地执行任务
 	ShowShell    bool                   `yaml:"show_shell,omitempty"`  // 是否打印shell
@@ -41,22 +42,22 @@ type Process struct {
 	Register  map[string]string
 }
 
-func (t *Task) run(ctx context.Context, vars map[string]interface{}, preProcess *Process) error {
+func (t *Task) run(ctx context.Context, vars map[string]interface{}) error {
 	if t == nil {
 		return errors.New("task is nil")
 	}
 
 	register := make(map[string]string)
 	args := make(map[string]interface{})
-	if preProcess != nil {
-		args["pre_pid"] = preProcess.PID
-		args["pre_state_code"] = preProcess.StateCode
-		args["pre_stderr"] = preProcess.Stderr
-		args["pre_stdout"] = preProcess.Stdout
+	if t.PreProcess != nil {
+		args["pre_pid"] = t.PreProcess.PID
+		args["pre_state_code"] = t.PreProcess.StateCode
+		args["pre_stderr"] = t.PreProcess.Stderr
+		args["pre_stdout"] = t.PreProcess.Stdout
 
-		if preProcess.Register != nil {
-			register = preProcess.Register
-			for k, v := range preProcess.Register {
+		if t.PreProcess.Register != nil {
+			register = t.PreProcess.Register
+			for k, v := range t.PreProcess.Register {
 				args[k] = v
 			}
 		}

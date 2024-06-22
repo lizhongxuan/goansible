@@ -27,6 +27,7 @@ type WorkArgs struct {
 	OutPath  string
 	ErrPaht  string
 	Username string
+	Become   bool
 }
 
 func Get(wa WorkArgs) *Work {
@@ -107,6 +108,10 @@ func (w *Work) AsyncRun() (int, error) {
 	}
 	ctx, _ := context.WithTimeout(context.Background(), timeout)
 	cmd := exec.CommandContext(ctx, "bash", "-c", w.Args.Shell)
+	if w.Args.Become {
+		cmd = exec.CommandContext(ctx, "sudo", "-S", "bash", "-c", w.Args.Shell)
+	}
+
 	// 设置命令的进程组 ID
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 

@@ -194,65 +194,71 @@ func (pb *Playbook) run() error {
 		// 执行任务
 		if pb.Strategy == "free" {
 			errGroup.Go(func() error {
-				if err := task.run(ctx, pb.Vars, nil); err != nil {
-					if !task.IgnoreErrors {
-						log.Printf("playbook:%s task-%d:%s error. \n", pb.Name, j, task.Name)
-						return err
-					}
-				}
-
-				// Notify
-				if len(task.Notify) != 0 && len(pb.Handlers) != 0 {
-					for _, noti := range task.Notify {
-						for _, hand := range pb.Handlers {
-							if hand.Name == noti {
-								if err := hand.run(ctx, pb.Vars, nil); err != nil {
-									if !task.IgnoreErrors {
-										log.Printf("playbook:%s task-%d:%s  handle:%s error. \n", pb.Name, j, task.Name, hand.Name)
-										return err
-									}
-								}
-								break
-							}
-						}
-					}
-				}
-
-				return nil
+				return pb.runTask(ctx, &task, &Task{})
 			})
 		} else {
-			if preTask == nil {
-				preTask = &Task{}
+			if err := pb.runTask(ctx, &task, preTask); err != nil {
+				return err
 			}
-			if err := task.run(ctx, pb.Vars, preTask.PreProcess); err != nil {
-				if !task.IgnoreErrors {
-					log.Printf("end playbook, because playbook:%s task-%d:%s error. \n", pb.Name, j, task.Name)
+			preTask = &task
+		}
+
+	}
+	return errGroup.Wait()
+}
+
+func (pb *Playbook) runTask(ctx context.Context, task *Task, preTask *Task) error {
+	items := []interface{}{
+		"flag",
+	}
+	items = append(items, task.WithItems...)
+	items = append(items, task.Loop...)
+
+	for i, t := range items {
+		item := t
+		if len(items) != 1 {
+			if i == 0 {
+				continue
+			}
+			pb.Vars["item"] = item
+		}
+
+		if err := task.run(ctx, pb.Vars); err != nil {
+			if !task.IgnoreErrors {
+				log.Printf("playbook:%s task:%s error:%+v \n", pb.Name, task.Name, err)
+				return err
+			}
+		}
+	}
+
+	// Notify
+	if err := pb.runNotify(ctx, task.Notify, task.PreProcess); err != nil {
+		if !task.IgnoreErrors {
+			return err
+		}
+	}
+	return nil
+}
+
+func (pb *Playbook) runNotify(ctx context.Context, notifys []string, preProcess *Process) error {
+	if len(notifys) == 0 || len(pb.Handlers) == 0 {
+		return nil
+	}
+	for _, noti := range notifys {
+		for _, hand := range pb.Handlers {
+			if hand.Name != noti {
+				continue
+			}
+			hand.PreProcess = preProcess
+			if err := hand.run(ctx, pb.Vars); err != nil {
+				if !hand.IgnoreErrors {
 					return err
 				}
 			}
-			// 赋值上一个任务
-			preTask = &task
-
-			// Notify
-			if len(task.Notify) != 0 && len(pb.Handlers) != 0 {
-				for _, noti := range task.Notify {
-					for _, hand := range pb.Handlers {
-						if hand.Name == noti {
-							if err := hand.run(ctx, pb.Vars, task.PreProcess); err != nil {
-								if !task.IgnoreErrors {
-									log.Printf("playbook:%s task-%d:%s  handle:%s error. \n", pb.Name, j, task.Name, hand.Name)
-									return err
-								}
-							}
-							break
-						}
-					}
-				}
-			}
-
+			break
 		}
 	}
-	return errGroup.Wait()
+	return nil
 }
 
 func printPlaybook(pb *Playbook) {

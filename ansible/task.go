@@ -89,10 +89,12 @@ func (t *Task) run(ctx context.Context, vars map[string]interface{}) error {
 		Shell:   sh,
 		TimeOut: time.Duration(t.Timeout) * time.Second,
 	}).RunOutput()
-	PrintfMsg(ctx, "stateCode:%d, stdout:%s, stderr:%s \n", stateCode, stdout, stderr)
 	if err != nil {
+		PrintfMsg(ctx, "stateCode:%d, stdout:%s, stderr:%s", stateCode, stdout, stderr)
 		PrintError(ctx, err)
 		return err
+	} else {
+		PrintfMsg(ctx, "stateCode:%d, stdout:%s, stderr:%s \n", stateCode, stdout, stderr)
 	}
 
 	if t.Register != "" {
@@ -201,5 +203,5 @@ func parseInt(s string) int {
 
 // 辅助函数，用于解析字符串
 func parseString(s string) string {
-	return strings.Trim(s, `"'`)
+	return strings.Trim(s, ` "'`)
 }

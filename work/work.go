@@ -175,7 +175,10 @@ func (w *Work) RunOutput() (int, string, string, error) {
 	if w.Args.TimeOut != 0 {
 		timeout = w.Args.TimeOut
 	}
-	ctx, _ := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	w.Args.Shell = "set -e \n" + w.Args.Shell
 	fmt.Println("RunOutput shell:", w.Args.Shell)
 	cmd := exec.CommandContext(ctx, "bash", "-c", w.Args.Shell)
 	// 设置命令的进程组 ID

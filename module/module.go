@@ -37,7 +37,7 @@ func ModuleVerify(m Module) (string, error) {
 		moduleName = "copy"
 	}
 	if num != 1 {
-		return "", errors.New("task module count invalid")
+		return "", errors.New(fmt.Sprintf("task module count:%d invalid", num))
 	}
 	return moduleName, nil
 }

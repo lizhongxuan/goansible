@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"go-ansible/module"
 	"go-ansible/work"
-	"log"
 	"strings"
 	"time"
 )
@@ -74,12 +73,14 @@ func (t *Task) run(ctx context.Context, vars map[string]interface{}) error {
 	}
 
 	if !t.WhenFunc(args) {
+		PrintfMsg(ctx, "ignore task, when:%s \n", t.When)
 		return nil
 	}
 
 	// 根据不同的moduleName构建不同的shell命令
 	sh, err := t.Module.ShellString(args)
 	if err != nil {
+		PrintfMsg(ctx, "error:%s ,args:%+v \n", err.Error(), args)
 		return err
 	}
 
@@ -88,8 +89,9 @@ func (t *Task) run(ctx context.Context, vars map[string]interface{}) error {
 		Shell:   sh,
 		TimeOut: time.Duration(t.Timeout) * time.Second,
 	}).RunOutput()
-	log.Println("stateCode:", stateCode, " ,stdout:", stdout, " ,stderr:", stderr)
+	PrintfMsg(ctx, "stateCode:%d, stdout:%s, stderr:%s \n", stateCode, stdout, stderr)
 	if err != nil {
+		PrintError(ctx, err)
 		return err
 	}
 
@@ -169,11 +171,20 @@ func evaluateCondition(vars map[string]interface{}, condition string) bool {
 		if len(eqParts) == 2 {
 			left := strings.TrimSpace(eqParts[0])
 			right := strings.TrimSpace(eqParts[1])
-			switch left {
-			case "A", "D":
-				return vars[left] == parseInt(right)
-			case "B", "C":
-				return vars[left] == parseString(right)
+
+			v, ok := vars[left]
+			if !ok {
+				fmt.Printf("when var:%s not found. \n", left)
+				return false
+			}
+
+			switch v.(type) {
+			case int, int64, int32, uint, uint64, uint32:
+				fmt.Printf("key:%s int left:%d right:%d, when:%v\n", left, v, parseInt(right), v == parseInt(right))
+				return v == parseInt(right)
+			default:
+				fmt.Printf("key:%s string left:%s right:%s, when:%v\n", left, v, parseString(right), v == parseString(right))
+				return v == parseString(right)
 			}
 		}
 	}

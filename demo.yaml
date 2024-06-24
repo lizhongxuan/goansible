@@ -1,12 +1,11 @@
-- name: playbook1
+- name: playbook111
   strategy: liner
+  vars:
+    DEST_PATH: /var/kingdee/dest
+    INSTALL_DIR: /var/kingdee/install
+    kernel_id.stdout: centos
   tasks:
-    - name: task2
-      shell: ls
-- name: playbook2
-  strategy: free
-  tasks:
-    - name: task1
+    - name: 获取操作系统
       shell: |
         if [ -f /etc/os-release ]; then
           id=`cat /etc/os-release | grep -e "^ID=" | awk -F '=' '{print $2}' | sed 's/\"//g'`
@@ -17,22 +16,72 @@
         else
           echo "none"
         fi
-      show_shell: true
-      register: os
-    - name: task2
-      shell: ls
-    - name: task3
+      register: kernel_id
+    - name: 设置目录权限
+      shell: |
+        if [ ! -d {{ .INSTALL_DIR }} ]; then
+          mkdir -p {{ .INSTALL_DIR }}
+        fi
+        # 获取绝对路径并移除路径末尾的斜线（如果有）
+        path=$(realpath "{{ .INSTALL_DIR }}")
+        path=${path%/}
+              
+        # 逐级向上修改每个目录的权限
+        while [ "$path" != "/" ]; do
+          chmod 755 "$path"
+          path=$(dirname "$path")
+        done
+      args:
+        executable: /bin/bash
+
+#    - name: 更新目录权限
+#      file: path={{ DEST_PATH }} state=directory mode=0777 recurse=yes
+    - name: 配置yum源
       copy:
-        src: /etc/aaa
-        dest: /etc/bbb/
+        src: "{{ .item }}"
+        dest: /etc/yum.repos.d/
         mode: 0644
-- name: playbook3
-  strategy: liner
-  tasks:
-    - name: task2
-      shell: ls
-- name: playbook4
-  strategy: liner
-  tasks:
-    - name: task2
-      shell: ls
+        with_items:
+          - /tmp/Singularity-Base.repo
+        ignore_errors: yes
+        when: kernel_id.stdout == "centos" or kernel_id.stdout == "redhat" or kernel_id.stdout == "kylin"
+    - name: 配置apt源-1
+      copy:
+        src: "{{ .item }}"
+        dest: /etc/apt/sources.list.d/
+        mode: 0644
+        with_items:
+          - /tmp/singularity.list
+        ignore_errors: yes
+        when: kernel_id.stdout == "ubuntu"
+    - name: 配置apt源-2
+      shell: |
+        # 禁用原来的源
+        if [ -f /etc/apt/sources.list ]; then
+          mv /etc/apt/sources.list /etc/apt/sources.list.bak
+        fi
+        # 更新源
+        apt update
+      args:
+        executable: /bin/bash
+      when: kernel_id.stdout == "ubuntu"
+    - name: 安装rsync-1
+      shell: if [[ $(rpm -qa | grep -c "rsync") -eq 0 ]]; then yum --disablerepo='*' --enablerepo=singularity-base-repo install -y rsync || true; fi
+      when: kernel_id.stdout == "centos" or kernel_id.stdout == "redhat" or kernel_id.stdout == "kylin"
+    - name: 安装rsync-2
+      shell: apt install -y rsync
+      become: true
+      when: kernel_id.stdout == "ubuntu"
+      ignore_errors: yes
+#    - name: 拷贝所有需要的文件(耗时略长~)
+#      synchronize: src={{ item }} dest={{ DEST_PATH }}/
+#      become: no
+#      loop:
+#        - 'k8s_all.tar.gz'
+#        - 'k8s_basic.image.tar.gz'
+#    - name: 拷贝clium需要的文件(耗时略长~)
+#      synchronize: src=cilium.1.9.11.tar.gz dest={{ DEST_PATH }}/
+#      become: no
+#      when: CILIUM_UP == 1
+    - name: 解压文件
+      shell: rm -rf {{ .DEST_PATH }}/k8s_all && tar -zxf {{ .DEST_PATH }}/k8s_all.tar.gz -C {{ .DEST_PATH }}/

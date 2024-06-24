@@ -74,6 +74,7 @@ func WithMiddlewares(middlewares map[string][]*Middleware) AnsiblePlaybookOption
 }
 
 func (pbList *ListPlaybook) Run() error {
+	ctx := context.Background()
 	if pbList == nil {
 		return errors.New("ListPlaybook is nil error")
 	}
@@ -88,9 +89,10 @@ func (pbList *ListPlaybook) Run() error {
 
 	for i, _ := range pbList.List {
 		pb := pbList.List[i]
+		ctx := setCtxPlaybook(ctx, pb.Name, i)
 		//pb.trimSpace()
-		if err := pb.verify(); err != nil {
-			log.Printf("end playbook, because verify playbook-%d:%s error. \n", i, pb.Name)
+		if err := pb.verify(ctx); err != nil {
+			log.Printf("verify playbook-%d:%s error:%+v. \n", i, pb.Name, err)
 			return err
 		}
 
@@ -104,11 +106,11 @@ func (pbList *ListPlaybook) Run() error {
 			pb.Vars["middlewares"] = middlewares
 		}
 
-		printPlaybook(pb)
+		//printPlaybook(pb)
 
-		if err := pb.run(); err != nil {
+		if err := pb.run(ctx); err != nil {
 			if !pb.IgnoreErrors {
-				log.Printf("end playbook, because run playbook-%d:%s error. \n", i, pb.Name)
+				PrintError(ctx, err)
 				return err
 			}
 		}
@@ -155,7 +157,7 @@ func (pb *Playbook) trimSpace() {
 	}
 }
 
-func (pb *Playbook) verify() error {
+func (pb *Playbook) verify(ctx context.Context) error {
 	if pb.Strategy == "" {
 		pb.Strategy = "linear"
 	}
@@ -169,26 +171,25 @@ func (pb *Playbook) verify() error {
 		if t.Name == "" {
 			return errors.New("There's a task that doesn't have a name.")
 		}
+		ctx := setCtxTask(ctx, t.Name, i)
 		mn, err := module.ModuleVerify(t.Module)
 		if err != nil {
+			PrintError(ctx, err)
 			return err
 		}
-		fmt.Println("mn:", mn)
 		pb.Tasks[i].ModuleName = mn
 	}
 	return nil
 }
 
-func (pb *Playbook) run() error {
-	ctx := context.Background()
+func (pb *Playbook) run(ctx context.Context) error {
 	var preTask *Task
 	var errGroup errgroup.Group
 	for j, _ := range pb.Tasks {
 		task := pb.Tasks[j]
+		ctx := setCtxTask(ctx, task.Name, j)
 		if task.ShowShell {
-			log.Printf("run playbook:%s task-%d:%s %s shell:%s \n", pb.Name, j, task.Name, pb.Strategy, task.Module.Shell)
-		} else {
-			log.Printf("run playbook:%s task-%d:%s %s \n", pb.Name, j, task.Name, pb.Strategy)
+			log.Printf("playbook:%s task-%d:%s  shell:%s \n", pb.Name, j+1, task.Name, task.Module.Shell)
 		}
 
 		// 执行任务
@@ -225,15 +226,17 @@ func (pb *Playbook) runTask(ctx context.Context, task *Task, preTask *Task) erro
 
 		if err := task.run(ctx, pb.Vars); err != nil {
 			if !task.IgnoreErrors {
-				log.Printf("playbook:%s task:%s error:%+v \n", pb.Name, task.Name, err)
+				PrintError(ctx, err)
 				return err
 			}
+			PrintfMsg(ctx, "igore error:%s", err.Error())
 		}
 	}
 
 	// Notify
 	if err := pb.runNotify(ctx, task.Notify, task.PreProcess); err != nil {
 		if !task.IgnoreErrors {
+			PrintError(ctx, err)
 			return err
 		}
 	}
@@ -266,13 +269,13 @@ func printPlaybook(pb *Playbook) {
 		return
 	}
 	if pb.Tasks != nil {
-		for _, t := range pb.Tasks {
-			fmt.Printf("Playbook:%s Task: %+v\n", pb.Name, t)
+		for i, t := range pb.Tasks {
+			fmt.Printf("Playbook:%s Task-%d: %+v\n", pb.Name, i+1, t)
 		}
 	}
 	if pb.Handlers != nil {
-		for _, t := range pb.Handlers {
-			fmt.Printf("Playbook:%s Handler: %+v\n", pb.Name, t)
+		for i, t := range pb.Handlers {
+			fmt.Printf("Playbook:%s Handler-%d: %+v\n", pb.Name, i+1, t)
 		}
 	}
 }

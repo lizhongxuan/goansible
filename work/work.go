@@ -178,7 +178,9 @@ func (w *Work) RunOutput() (int, string, string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	w.Args.Shell = "set -e \n" + w.Args.Shell
+	if !strings.Contains(w.Args.Shell, "#!/bin") {
+		w.Args.Shell = "set -e \n" + w.Args.Shell
+	}
 	fmt.Println("RunOutput shell:", w.Args.Shell)
 	cmd := exec.CommandContext(ctx, "bash", "-c", w.Args.Shell)
 	// 设置命令的进程组 ID

@@ -1,7 +1,9 @@
 package module
 
-type ShellModule string
+type ShellModule struct {
+	Shell string `yaml:"shell"`
+}
 
-func (cm *ShellModule) shellString(args map[string]interface{}) (string, error) {
-	return Template(string(*cm), args)
+func (*ShellModule) StringShell(m Module, args map[string]interface{}) (string, error) {
+	return Template(m.Shell.Shell, args)
 }

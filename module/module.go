@@ -3,14 +3,45 @@ package module
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"html/template"
+	"log"
+	"reflect"
 )
 
 type Module struct {
-	Shell ShellModule `yaml:"shell,omitempty"`
-	Copy  *CopyModule `yaml:"copy,omitempty"`
-	File  *FileModule `yaml:"file,omitempty"`
+	Shell *ShellModule `yaml:",inline"`
+	Copy  *CopyModule  `yaml:"copy,omitempty"`
+	File  *FileModule  `yaml:"file,omitempty"`
+}
+
+var modules map[string]ModuleInterface
+
+func init() {
+	// key需要跟Module下的变量名一样
+	modules = map[string]ModuleInterface{
+		"Copy":  &CopyModule{},
+		"Shell": &ShellModule{},
+	}
+}
+
+type ModuleInterface interface {
+	StringShell(Module, map[string]interface{}) (string, error)
+}
+
+func FindAndVerify(m Module) string {
+	v := reflect.ValueOf(m)
+	t := v.Type()
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		fieldType := t.Field(i)
+		if field.IsNil() {
+			continue
+		}
+		if _, ok := modules[fieldType.Name]; ok {
+			return fieldType.Name
+		}
+	}
+	return ""
 }
 
 func Template(str string, args map[string]interface{}) (string, error) {
@@ -25,34 +56,11 @@ func Template(str string, args map[string]interface{}) (string, error) {
 	return std.String(), nil
 }
 
-func ModuleVerify(m Module) (string, error) {
-	num := 0
-	moduleName := ""
-	if m.Shell != "" {
-		num++
-		moduleName = "shell"
-	}
-	if m.Copy != nil {
-		num++
-		moduleName = "copy"
-	}
-	if num != 1 {
-		return "", errors.New(fmt.Sprintf("task module count:%d invalid", num))
-	}
-	return moduleName, nil
-}
-
 func (m Module) ShellString(args map[string]interface{}) (string, error) {
-	moduleName, err := ModuleVerify(m)
-	if err != nil {
-		return "", err
+	mi, ok := modules[FindAndVerify(m)]
+	if !ok {
+		return "", errors.New("task module invalid.")
 	}
-	switch moduleName {
-	case "copy":
-		return m.Copy.shellString(args)
-	case "shell":
-		return m.Shell.shellString(args)
-	default:
-		return "", errors.New(fmt.Sprintf("task module_name:%s invalid.", moduleName))
-	}
+	log.Printf("Module: %+v", m)
+	return mi.StringShell(m, args)
 }

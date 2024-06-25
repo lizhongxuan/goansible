@@ -13,7 +13,6 @@ import (
 // Task represents a single task in an Ansible playbook.
 type Task struct {
 	Name         string                 `yaml:"name"`                  // 任务名称
-	Type         string                 `yaml:"type,omitempty"`        // 任务执行类型.RUN,RUNOUTPUT,RUNASYNC,默认为RUN
 	ModuleName   string                 `yaml:"module_name,omitempty"` // 模块名称，内联以适应各种模块
 	ShellBody    string                 `yaml:"shell_body,omitempty"`
 	Module       module.Module          `yaml:",inline"`
@@ -83,6 +82,7 @@ func (t *Task) run(ctx context.Context, vars map[string]interface{}) error {
 		PrintfMsg(ctx, "error:%s ,args:%+v \n", err.Error(), args)
 		return err
 	}
+	PrintfMsg(ctx, "sh:%s \n", sh)
 
 	// 执行shell命令
 	stateCode, stdout, stderr, err := work.Get(work.WorkArgs{
@@ -113,7 +113,6 @@ func (t *Task) run(ctx context.Context, vars map[string]interface{}) error {
 
 func (t Task) trimSpace() Task {
 	t.Name = strings.TrimSpace(t.Name)
-	t.Type = strings.TrimSpace(t.Type)
 	if t.Args != nil {
 		args := make(map[string]interface{})
 		for key, value := range t.Args {

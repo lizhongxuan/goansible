@@ -7,3 +7,4 @@
 - 完善module基础模块
 - 抽象module
 - 实现多种work
+- 引入泛型

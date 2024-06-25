@@ -13,13 +13,13 @@ type CopyModule struct {
 	Mode fs.FileMode `yaml:"mode,omitempty"`
 }
 
-func (cm *CopyModule) shellString(args map[string]interface{}) (string, error) {
-	src := strings.TrimSpace(cm.Src)
+func (*CopyModule) StringShell(m Module, args map[string]interface{}) (string, error) {
+	src := strings.TrimSpace(m.Copy.Src)
 	src, err := Template(src, args)
 	if err != nil {
 		return "", err
 	}
-	dest := strings.TrimSpace(cm.Dest)
+	dest := strings.TrimSpace(m.Copy.Dest)
 	dest, err = Template(dest, args)
 	if err != nil {
 		return "", err

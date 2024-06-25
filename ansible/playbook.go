@@ -171,11 +171,9 @@ func (pb *Playbook) verify(ctx context.Context) error {
 		if t.Name == "" {
 			return errors.New("There's a task that doesn't have a name.")
 		}
-		ctx := setCtxTask(ctx, t.Name, i)
-		mn, err := module.ModuleVerify(t.Module)
-		if err != nil {
-			PrintError(ctx, err)
-			return err
+		mn := module.FindAndVerify(t.Module)
+		if mn == "" {
+			return errors.New("module is nil")
 		}
 		pb.Tasks[i].ModuleName = mn
 	}

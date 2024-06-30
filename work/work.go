@@ -25,6 +25,7 @@ type Work struct {
 	Username     string
 	Become       bool
 	SudoPassword string
+	Stdin        string
 }
 
 func GetWork(shell string, opts ...WorkOptionsFunc) *Work {
@@ -39,6 +40,13 @@ func GetWork(shell string, opts ...WorkOptionsFunc) *Work {
 }
 
 type WorkOptionsFunc func(*Work)
+
+func WithStdin(str string) WorkOptionsFunc {
+	return func(w *Work) {
+		w.Stdin = str
+		return
+	}
+}
 
 func WithTimeOut(t time.Duration) WorkOptionsFunc {
 	return func(w *Work) {

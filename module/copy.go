@@ -14,13 +14,11 @@ type CopyModule struct {
 }
 
 func (*CopyModule) StringShell(m Module, args map[string]interface{}) (string, error) {
-	src := strings.TrimSpace(m.Copy.Src)
-	src, err := Template(src, args)
+	src, err := Template(strings.TrimSpace(m.Copy.Src), args)
 	if err != nil {
 		return "", err
 	}
-	dest := strings.TrimSpace(m.Copy.Dest)
-	dest, err = Template(dest, args)
+	dest, err := Template(strings.TrimSpace(m.Copy.Dest), args)
 	if err != nil {
 		return "", err
 	}

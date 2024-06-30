@@ -85,10 +85,9 @@ func (t *Task) run(ctx context.Context, vars map[string]interface{}) error {
 	PrintfMsg(ctx, "sh:%s \n", sh)
 
 	// 执行shell命令
-	stateCode, stdout, stderr, err := work.Get(work.WorkArgs{
-		Shell:   sh,
-		TimeOut: time.Duration(t.Timeout) * time.Second,
-	}).RunOutput()
+	stateCode, stdout, stderr, err := work.GetWork(sh,
+		work.WithTimeOut(time.Duration(t.Timeout)*time.Second),
+	).RunOutput()
 	if err != nil {
 		PrintfMsg(ctx, "stateCode:%d, stdout:%s, stderr:%s", stateCode, stdout, stderr)
 		PrintError(ctx, err)

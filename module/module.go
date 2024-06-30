@@ -9,9 +9,10 @@ import (
 )
 
 type Module struct {
-	Shell *ShellModule `yaml:",inline"`
-	Copy  *CopyModule  `yaml:"copy,omitempty"`
-	File  *FileModule  `yaml:"file,omitempty"`
+	Shell       *ShellModule       `yaml:",inline"`
+	Copy        *CopyModule        `yaml:"copy,omitempty"`
+	File        *FileModule        `yaml:"file,omitempty"`
+	Synchronize *SynchronizeModule `yaml:"synchronize,omitempty"`
 }
 
 var modules map[string]ModuleInterface
@@ -19,8 +20,9 @@ var modules map[string]ModuleInterface
 func init() {
 	// key需要跟Module下的变量名一样
 	modules = map[string]ModuleInterface{
-		"Copy":  &CopyModule{},
-		"Shell": &ShellModule{},
+		"Copy":        &CopyModule{},
+		"Shell":       &ShellModule{},
+		"Synchronize": &SynchronizeModule{},
 	}
 }
 
@@ -28,20 +30,18 @@ type ModuleInterface interface {
 	StringShell(Module, map[string]interface{}) (string, error)
 }
 
-func FindAndVerify(m Module) string {
+func Find(m Module) ModuleInterface {
 	v := reflect.ValueOf(m)
-	t := v.Type()
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Field(i)
-		fieldType := t.Field(i)
 		if field.IsNil() {
 			continue
 		}
-		if _, ok := modules[fieldType.Name]; ok {
-			return fieldType.Name
+		if obj, ok := field.Interface().(ModuleInterface); ok {
+			return obj
 		}
 	}
-	return ""
+	return nil
 }
 
 func Template(str string, args map[string]interface{}) (string, error) {

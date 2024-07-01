@@ -35,3 +35,7 @@ const (
 	MountedFileModuleState   FileModuleState = "mounted"   // 确保文件系统已挂载
 	TouchFileModuleState     FileModuleState = "touch"     // 创建文件，如果文件已存在，则更新其时间戳
 )
+
+func (m *FileModule) Show() string {
+	return "File Module"
+}

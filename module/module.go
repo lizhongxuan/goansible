@@ -13,19 +13,9 @@ type Module struct {
 	Synchronize *SynchronizeModule `yaml:"synchronize,omitempty"`
 }
 
-var modules map[string]ModuleInterface
-
-func init() {
-	// key需要跟Module下的变量名一样
-	modules = map[string]ModuleInterface{
-		"Copy":        &CopyModule{},
-		"Shell":       &ShellModule{},
-		"Synchronize": &SynchronizeModule{},
-	}
-}
-
 type ModuleInterface interface {
 	StringShell(map[string]interface{}) (string, error)
+	Show() string
 }
 
 func Find(m Module) ModuleInterface {

@@ -13,6 +13,8 @@ type CopyModule struct {
 	Mode fs.FileMode `yaml:"mode,omitempty"`
 }
 
+var _ ModuleInterface = &CopyModule{}
+
 func (m *CopyModule) StringShell(args map[string]interface{}) (string, error) {
 	src, err := Template(strings.TrimSpace(m.Src), args)
 	if err != nil {
@@ -37,4 +39,8 @@ func (m *CopyModule) StringShell(args map[string]interface{}) (string, error) {
 		chmodDest = dest + srcFile
 	}
 	return fmt.Sprintf("cp %s %s %s && chmod %s %s", cpArg, src, dest, chmodArg, chmodDest), nil
+}
+
+func (m *CopyModule) Show() string {
+	return "Copy Module"
 }

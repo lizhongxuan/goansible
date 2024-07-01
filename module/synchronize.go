@@ -10,6 +10,8 @@ type SynchronizeModule struct {
 	Dest string `yaml:"dest,omitempty"`
 }
 
+var _ ModuleInterface = &SynchronizeModule{}
+
 func (m *SynchronizeModule) StringShell(args map[string]interface{}) (string, error) {
 	src, err := Template(strings.TrimSpace(m.Src), args)
 	if err != nil {
@@ -31,4 +33,8 @@ func checkIsSSH(str string) bool {
 		return true
 	}
 	return false
+}
+
+func (m *SynchronizeModule) Show() string {
+	return "Synchronize Module"
 }

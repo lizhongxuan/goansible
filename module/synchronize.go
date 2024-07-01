@@ -10,12 +10,12 @@ type SynchronizeModule struct {
 	Dest string `yaml:"dest,omitempty"`
 }
 
-func (*SynchronizeModule) StringShell(m Module, args map[string]interface{}) (string, error) {
-	src, err := Template(strings.TrimSpace(m.Copy.Src), args)
+func (m *SynchronizeModule) StringShell(args map[string]interface{}) (string, error) {
+	src, err := Template(strings.TrimSpace(m.Src), args)
 	if err != nil {
 		return "", err
 	}
-	dest, err := Template(strings.TrimSpace(m.Copy.Dest), args)
+	dest, err := Template(strings.TrimSpace(m.Dest), args)
 	if err != nil {
 		return "", err
 	}

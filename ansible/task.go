@@ -12,8 +12,7 @@ import (
 
 // Task represents a single task in an Ansible playbook.
 type Task struct {
-	Name         string                 `yaml:"name"`                  // 任务名称
-	ModuleName   string                 `yaml:"module_name,omitempty"` // 模块名称，内联以适应各种模块
+	Name         string                 `yaml:"name"` // 任务名称
 	ShellBody    string                 `yaml:"shell_body,omitempty"`
 	Module       module.Module          `yaml:",inline"`
 	Args         map[string]interface{} `yaml:"args,omitempty"`        // 模块参数，内联以适应各种模块参数
@@ -30,6 +29,7 @@ type Task struct {
 	ShowShell    bool                   `yaml:"show_shell,omitempty"`  // 是否打印shell
 	Timeout      int64                  `yaml:"timeout,omitempty"`
 	PreProcess   *Process               `yaml:"out_put,omitempty"`
+	ModuleObject module.ModuleInterface
 }
 
 type Process struct {
@@ -77,7 +77,7 @@ func (t *Task) run(ctx context.Context, vars map[string]interface{}) error {
 	}
 
 	// 根据不同的moduleName构建不同的shell命令
-	sh, err := t.Module.ShellString(args)
+	sh, err := t.ModuleObject.StringShell(args)
 	if err != nil {
 		PrintfMsg(ctx, "error:%s ,args:%+v \n", err.Error(), args)
 		return err

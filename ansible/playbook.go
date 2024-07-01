@@ -171,11 +171,11 @@ func (pb *Playbook) verify(ctx context.Context) error {
 		if t.Name == "" {
 			return errors.New("There's a task that doesn't have a name.")
 		}
-		mn := module.FindAndVerify(t.Module)
-		if mn == "" {
+		mobj := module.Find(t.Module)
+		if mobj == nil {
 			return errors.New("module is nil")
 		}
-		pb.Tasks[i].ModuleName = mn
+		pb.Tasks[i].ModuleObject = mobj
 	}
 	return nil
 }

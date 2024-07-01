@@ -2,9 +2,7 @@ package module
 
 import (
 	"bytes"
-	"errors"
 	"html/template"
-	"log"
 	"reflect"
 )
 
@@ -27,7 +25,7 @@ func init() {
 }
 
 type ModuleInterface interface {
-	StringShell(Module, map[string]interface{}) (string, error)
+	StringShell(map[string]interface{}) (string, error)
 }
 
 func Find(m Module) ModuleInterface {
@@ -54,13 +52,4 @@ func Template(str string, args map[string]interface{}) (string, error) {
 		panic(err)
 	}
 	return std.String(), nil
-}
-
-func (m Module) ShellString(args map[string]interface{}) (string, error) {
-	mi, ok := modules[FindAndVerify(m)]
-	if !ok {
-		return "", errors.New("task module invalid.")
-	}
-	log.Printf("Module: %+v", m)
-	return mi.StringShell(m, args)
 }

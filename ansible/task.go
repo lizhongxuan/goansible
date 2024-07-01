@@ -82,7 +82,7 @@ func (t *Task) run(ctx context.Context, vars map[string]interface{}) error {
 		PrintfMsg(ctx, "error:%s ,args:%+v \n", err.Error(), args)
 		return err
 	}
-	PrintfMsg(ctx, "sh:%s \n", sh)
+	PrintfMsg(ctx, "module:%s sh:%s \n", t.ModuleObject.Show(), sh)
 
 	// 执行shell命令
 	stateCode, stdout, stderr, err := work.GetWork(sh,

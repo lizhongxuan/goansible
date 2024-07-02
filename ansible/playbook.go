@@ -16,7 +16,6 @@ type Playbook struct {
 	Name         string                 `yaml:"name"`          // Playbook 名称
 	Hosts        string                 `yaml:"hosts"`         // 任务运行的主机或主机组
 	Middlewares  string                 `yaml:"middlewares"`   // 中间件组
-	Become       bool                   `yaml:"become"`        // 是否提升权限（类似于 sudo）
 	Vars         map[string]interface{} `yaml:"vars"`          // 变量定义
 	Tasks        []Task                 `yaml:"tasks"`         // 任务列表
 	Handlers     []Task                 `yaml:"handlers"`      // 处理程序列表

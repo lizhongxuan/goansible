@@ -23,7 +23,6 @@ type Work struct {
 	OutPath      string
 	ErrPath      string
 	Username     string
-	Become       bool
 	SudoPassword string
 	Stdin        string
 }
@@ -76,16 +75,16 @@ func WithUsername(username string) WorkOptionsFunc {
 	}
 }
 
-func WithBecome(become bool) WorkOptionsFunc {
+func WithSudoPassword(sudoPassword string) WorkOptionsFunc {
 	return func(w *Work) {
-		w.Become = become
+		w.SudoPassword = sudoPassword
 		return
 	}
 }
 
-func WithSudoPassword(sudoPassword string) WorkOptionsFunc {
+func WithFunc(f func(*Work)) WorkOptionsFunc {
 	return func(w *Work) {
-		w.SudoPassword = sudoPassword
+		f(w)
 		return
 	}
 }
@@ -98,9 +97,9 @@ func (w *Work) AsyncRun() (int, error) {
 		timeout = w.TimeOut
 	}
 	ctx, _ := context.WithTimeout(context.Background(), timeout)
-	cmd := exec.CommandContext(ctx, "bash", "-c", w.Shell)
-	if w.Become && w.SudoPassword != "" && w.Username != "root" {
-		cmd = exec.CommandContext(ctx, "sudo", "-S", "bash", "-c", w.Shell)
+	cmd := exec.CommandContext(ctx, "sh", "-c", w.Shell)
+	if w.SudoPassword != "" && w.Username != "root" {
+		cmd = exec.CommandContext(ctx, "sudo", "-S", "sh", "-c", w.Shell)
 		cmd.Stdin = strings.NewReader(w.SudoPassword + "\n")
 	}
 
@@ -170,9 +169,9 @@ func (w *Work) RunOutput() (int, string, string, error) {
 	defer cancel()
 
 	fmt.Println("RunOutput shell:", w.Shell)
-	cmd := exec.CommandContext(ctx, "bash", "-c", w.Shell)
-	if w.Become && w.SudoPassword != "" && w.Username != "root" {
-		cmd = exec.CommandContext(ctx, "sudo", "-S", "bash", "-c", w.Shell)
+	cmd := exec.CommandContext(ctx, "sh", "-c", w.Shell)
+	if w.SudoPassword != "" && w.Username != "root" {
+		cmd = exec.CommandContext(ctx, "sudo", "-S", "sh", "-c", w.Shell)
 		cmd.Stdin = strings.NewReader(w.SudoPassword + "\n")
 	}
 	// 设置命令的进程组 ID

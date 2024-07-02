@@ -27,6 +27,7 @@ type Task struct {
 	Notify       []string               `yaml:"notify,omitempty"`      // 通知处理程序
 	When         string                 `yaml:"when,omitempty"`        // 条件语句，用于有条件地执行任务
 	ShowShell    bool                   `yaml:"show_shell,omitempty"`  // 是否打印shell
+	Become       bool                   `yaml:"become"`                // 是否提升权限（类似于 sudo）
 	Timeout      int64                  `yaml:"timeout,omitempty"`
 	PreProcess   *Process               `yaml:"out_put,omitempty"`
 	ModuleObject module.ModuleInterface
@@ -84,9 +85,12 @@ func (t *Task) run(ctx context.Context, vars map[string]interface{}) error {
 	}
 	PrintfMsg(ctx, "module:%s sh:%s \n", t.ModuleObject.Show(), sh)
 
+	sudoPassword := ""
+
 	// 执行shell命令
 	stateCode, stdout, stderr, err := work.GetWork(sh,
 		work.WithTimeOut(time.Duration(t.Timeout)*time.Second),
+		work.WithSudoPassword(sudoPassword),
 	).RunOutput()
 	if err != nil {
 		PrintfMsg(ctx, "stateCode:%d, stdout:%s, stderr:%s", stateCode, stdout, stderr)

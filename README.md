@@ -8,6 +8,11 @@
 - module:  负责多个module的赋能,每个module支持一种命令格式
 - work:    负责执行下发的shell任务
 
+## example
+- playbook.yaml: 记录运行的脚本内容跟逻辑关系
+- host.yaml: 记录主机资源
+- toolcheck.yaml: 记录工具的检查命令跟回调命令
+
 ## TODO
 - 完善module基础模块
 - 抽象module

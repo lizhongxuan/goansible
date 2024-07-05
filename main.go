@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	data, err := os.ReadFile("./demo.yaml")
+	data, err := os.ReadFile("./example/playbook.yaml")
 	if err != nil {
 		fmt.Println("ReadFile err:", err)
 		return

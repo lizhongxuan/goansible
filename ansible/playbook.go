@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go-ansible/model"
 	"go-ansible/module"
 	"golang.org/x/sync/errgroup"
 	"gopkg.in/yaml.v3"
@@ -26,14 +27,14 @@ type Playbook struct {
 
 type ListPlaybook struct {
 	List           []*Playbook
-	HostMaps       map[string][]*Host
+	HostMaps       map[string][]*model.Host
 	MiddlewareMaps map[string][]*Middleware
 }
 
 func GeneratePlaybook(options ...AnsiblePlaybookOptionsFunc) (*ListPlaybook, error) {
 	listPlaybook := &ListPlaybook{
 		List:           make([]*Playbook, 0),
-		HostMaps:       make(map[string][]*Host),
+		HostMaps:       make(map[string][]*model.Host),
 		MiddlewareMaps: make(map[string][]*Middleware),
 	}
 	for _, option := range options {
@@ -59,7 +60,7 @@ func WithPlaybooks(data []byte) AnsiblePlaybookOptionsFunc {
 		return nil
 	}
 }
-func WithHosts(hosts map[string][]*Host) AnsiblePlaybookOptionsFunc {
+func WithHosts(hosts map[string][]*model.Host) AnsiblePlaybookOptionsFunc {
 	return func(lpb *ListPlaybook) error {
 		lpb.HostMaps = hosts
 		return nil
@@ -78,8 +79,8 @@ func (pbList *ListPlaybook) Run() error {
 		return errors.New("ListPlaybook is nil error")
 	}
 	if pbList.HostMaps == nil {
-		pbList.HostMaps = make(map[string][]*Host)
-		pbList.HostMaps[""] = make([]*Host, 0)
+		pbList.HostMaps = make(map[string][]*model.Host)
+		pbList.HostMaps[""] = make([]*model.Host, 0)
 	}
 	if pbList.MiddlewareMaps == nil {
 		pbList.MiddlewareMaps = make(map[string][]*Middleware)

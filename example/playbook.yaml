@@ -32,7 +32,6 @@
         done
       args:
         executable: /bin/bash
-
 #    - name: 更新目录权限
 #      file: path={{ DEST_PATH }} state=directory mode=0777 recurse=yes
     - name: 配置yum源

@@ -1,4 +1,4 @@
-package ansible
+package model
 
 type Host struct {
 	IP           string `yaml:"ip"`

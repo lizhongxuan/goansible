@@ -1,6 +1,6 @@
 package ansible
 
-import "go-ansible/model"
+import "goansible/model"
 
 type Middleware struct {
 	Kind     string                 `yaml:"kind"`

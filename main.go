@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"go-ansible/ansible"
+	"goansible/ansible"
 	"os"
 )
 

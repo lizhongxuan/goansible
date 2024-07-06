@@ -28,6 +28,9 @@ type WorkOptionsFunc func(*WorkOptions)
 
 func WithStdin(str string) WorkOptionsFunc {
 	return func(w *WorkOptions) {
+		if str == "" {
+			return
+		}
 		w.Stdin = str
 		return
 	}
@@ -45,6 +48,9 @@ func WithTimeOut(t time.Duration) WorkOptionsFunc {
 
 func WithOutPath(path string) WorkOptionsFunc {
 	return func(w *WorkOptions) {
+		if path == "" {
+			return
+		}
 		w.OutPath = path
 		return
 	}
@@ -52,6 +58,9 @@ func WithOutPath(path string) WorkOptionsFunc {
 
 func WithErrPath(path string) WorkOptionsFunc {
 	return func(w *WorkOptions) {
+		if path == "" {
+			return
+		}
 		w.ErrPath = path
 		return
 	}
@@ -59,6 +68,9 @@ func WithErrPath(path string) WorkOptionsFunc {
 
 func WithUsername(username string) WorkOptionsFunc {
 	return func(w *WorkOptions) {
+		if username == "" {
+			return
+		}
 		w.Username = username
 		return
 	}
@@ -66,6 +78,9 @@ func WithUsername(username string) WorkOptionsFunc {
 
 func WithSudoPassword(sudoPassword string) WorkOptionsFunc {
 	return func(w *WorkOptions) {
+		if sudoPassword == "" {
+			return
+		}
 		w.SudoPassword = sudoPassword
 		return
 	}
@@ -73,6 +88,9 @@ func WithSudoPassword(sudoPassword string) WorkOptionsFunc {
 
 func WithFunc(f func(*WorkOptions)) WorkOptionsFunc {
 	return func(w *WorkOptions) {
+		if f == nil {
+			return
+		}
 		f(w)
 		return
 	}

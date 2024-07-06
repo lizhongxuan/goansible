@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"goansible/checker"
 	"goansible/model"
 	"goansible/module"
 	"goansible/work"
@@ -94,6 +95,9 @@ func (pbList *ListPlaybook) Run(worker ...work.Worker) error {
 	if len(worker) != 0 {
 		w = worker[0]
 	}
+
+	// 遍历所有前置的checker
+	checker.Check(w, )
 
 	for i, _ := range pbList.List {
 		pb := pbList.List[i]

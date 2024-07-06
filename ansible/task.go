@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go-ansible/module"
 	"go-ansible/work"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -30,13 +31,14 @@ type Task struct {
 	Become       bool                   `yaml:"become"`                // 是否提升权限（类似于 sudo）
 	Timeout      int64                  `yaml:"timeout,omitempty"`
 	PreProcess   *Process               `yaml:"out_put,omitempty"`
+	NotWait      bool                   `yaml:"not_wait,omitempty"`
 	ModuleObject module.ModuleInterface
+	Worker       work.Worker
 }
 
 type Process struct {
 	PID       int64 // 最后一个shell的执行进程ID
 	StateCode int
-	Stderr    string
 	Stdout    string
 	Register  map[string]string
 }
@@ -51,7 +53,6 @@ func (t *Task) run(ctx context.Context, vars map[string]interface{}) error {
 	if t.PreProcess != nil {
 		args["pre_pid"] = t.PreProcess.PID
 		args["pre_state_code"] = t.PreProcess.StateCode
-		args["pre_stderr"] = t.PreProcess.Stderr
 		args["pre_stdout"] = t.PreProcess.Stdout
 
 		if t.PreProcess.Register != nil {
@@ -87,28 +88,44 @@ func (t *Task) run(ctx context.Context, vars map[string]interface{}) error {
 
 	sudoPassword := ""
 
-	// 执行shell命令
-	stateCode, stdout, stderr, err := work.GetWork(sh,
+	if t.NotWait {
+		// 不等待命令结果,返回:pid,错误
+		pid, err := t.Worker.Start(sh,
+			work.WithTimeOut(time.Duration(t.Timeout)*time.Second),
+			work.WithSudoPassword(sudoPassword),
+		)
+		if err != nil {
+			PrintError(ctx, err)
+			return err
+		}
+		PrintfMsg(ctx, "pid:%d \n", pid)
+		register[fmt.Sprintf("%s.pid", t.Name)] = strconv.Itoa(pid)
+		t.PreProcess = &Process{
+			Register: register,
+		}
+		return nil
+	}
+
+	// 等待命令结果,返回:状态码,输出,错误
+	stateCode, stdout, err := t.Worker.RunOutput(sh,
 		work.WithTimeOut(time.Duration(t.Timeout)*time.Second),
 		work.WithSudoPassword(sudoPassword),
-	).RunOutput()
+	)
 	if err != nil {
-		PrintfMsg(ctx, "stateCode:%d, stdout:%s, stderr:%s", stateCode, stdout, stderr)
+		PrintfMsg(ctx, "stateCode:%d, stdout:%s", stateCode, stdout)
 		PrintError(ctx, err)
 		return err
 	} else {
-		PrintfMsg(ctx, "stateCode:%d, stdout:%s, stderr:%s \n", stateCode, stdout, stderr)
+		PrintfMsg(ctx, "stateCode:%d, stdout:%s \n", stateCode, stdout)
 	}
 
 	if t.Register != "" {
 		registerName := fmt.Sprintf("%s.stdout", t.Register)
 		register[registerName] = stdout
 	}
-
 	t.PreProcess = &Process{
 		StateCode: stateCode,
 		Stdout:    stdout,
-		Stderr:    stderr,
 		Register:  register,
 	}
 	return nil

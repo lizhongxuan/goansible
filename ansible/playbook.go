@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go-ansible/model"
 	"go-ansible/module"
+	"go-ansible/work"
 	"golang.org/x/sync/errgroup"
 	"gopkg.in/yaml.v3"
 	"log"
@@ -23,6 +24,7 @@ type Playbook struct {
 	Roles        []string               `yaml:"roles"`         // 角色列表
 	Strategy     string                 `yaml:"strategy"`      // 执行策略：linear 是默认策略，按顺序执行每个任务；free 策略允许主机并行执行任务，不必等待其他主机完成当前任务。
 	IgnoreErrors bool                   `yaml:"ignore_errors"` // 是否忽略任务错误
+	Worker       work.Worker
 }
 
 type ListPlaybook struct {
@@ -73,7 +75,7 @@ func WithMiddlewares(middlewares map[string][]*Middleware) AnsiblePlaybookOption
 	}
 }
 
-func (pbList *ListPlaybook) Run() error {
+func (pbList *ListPlaybook) Run(worker ...work.Worker) error {
 	ctx := context.Background()
 	if pbList == nil {
 		return errors.New("ListPlaybook is nil error")
@@ -87,8 +89,15 @@ func (pbList *ListPlaybook) Run() error {
 		pbList.MiddlewareMaps[""] = make([]*Middleware, 0)
 	}
 
+	var w work.Worker
+	w = &work.LocalCmd{}
+	if len(worker) != 0 {
+		w = worker[0]
+	}
+
 	for i, _ := range pbList.List {
 		pb := pbList.List[i]
+		pb.Worker = w
 		ctx := setCtxPlaybook(ctx, pb.Name, i)
 		//pb.trimSpace()
 		if err := pb.verify(ctx); err != nil {
@@ -185,6 +194,7 @@ func (pb *Playbook) run(ctx context.Context) error {
 	var errGroup errgroup.Group
 	for j, _ := range pb.Tasks {
 		task := pb.Tasks[j]
+		task.Worker = pb.Worker
 		ctx := setCtxTask(ctx, task.Name, j)
 		if task.ShowShell {
 			log.Printf("playbook:%s task-%d:%s  shell:%s \n", pb.Name, j+1, task.Name, task.Module.Shell)

@@ -83,11 +83,9 @@ func (pbList *ListPlaybook) Run(worker ...work.Worker) error {
 	}
 	if pbList.HostMaps == nil {
 		pbList.HostMaps = make(map[string][]*model.Host)
-		pbList.HostMaps[""] = make([]*model.Host, 0)
 	}
 	if pbList.MiddlewareMaps == nil {
 		pbList.MiddlewareMaps = make(map[string][]*Middleware)
-		pbList.MiddlewareMaps[""] = make([]*Middleware, 0)
 	}
 
 	var w work.Worker
@@ -96,8 +94,10 @@ func (pbList *ListPlaybook) Run(worker ...work.Worker) error {
 		w = worker[0]
 	}
 
-	// 遍历所有前置的checker
-	checker.Check(w, )
+	if err := pbList.CheckPreCMD(w); err != nil {
+		log.Println("check cmd error:", err)
+		return err
+	}
 
 	for i, _ := range pbList.List {
 		pb := pbList.List[i]
@@ -221,6 +221,11 @@ func (pb *Playbook) run(ctx context.Context) error {
 }
 
 func (pb *Playbook) runTask(ctx context.Context, task *Task, preTask *Task) error {
+	if err := checker.Check(task.Worker, task.Check); err != nil {
+		log.Println("Check err:", err)
+		return err
+	}
+
 	items := []interface{}{
 		"flag",
 	}
@@ -290,4 +295,28 @@ func printPlaybook(pb *Playbook) {
 			fmt.Printf("Playbook:%s Handler-%d: %+v\n", pb.Name, i+1, t)
 		}
 	}
+}
+
+func (pbList *ListPlaybook) CheckPreCMD(w work.Worker) error {
+	if len(pbList.List) == 0 {
+		return nil
+	}
+	for i, _ := range pbList.List {
+		pb := pbList.List[i]
+		if len(pb.Tasks) == 0 {
+			continue
+		}
+		for j, _ := range pb.Tasks {
+			task := pb.Tasks[j]
+			if len(task.PreCheck) == 0 {
+				continue
+			}
+			// 遍历所有前置的checker
+			if err := checker.Check(w, task.PreCheck); err != nil {
+				log.Println("Check err:", err)
+				return err
+			}
+		}
+	}
+	return nil
 }

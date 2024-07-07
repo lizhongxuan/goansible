@@ -14,7 +14,6 @@ type Checker struct {
 	SuccessHooks []string `yaml:"success_hooks"`
 	FailHooks    []string `yaml:"fail_hooks"`
 	IgnoreErrors bool     `yaml:"ignore_errors"` // 是否忽略任务错误
-	Precondition bool     `yaml:"precondition"`
 	Work         work.Worker
 }
 

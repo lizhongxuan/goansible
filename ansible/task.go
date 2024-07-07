@@ -32,6 +32,8 @@ type Task struct {
 	Timeout      int64                  `yaml:"timeout,omitempty"`
 	PreProcess   *Process               `yaml:"out_put,omitempty"`
 	NotWait      bool                   `yaml:"not_wait,omitempty"`
+	Check        []string               `yaml:"check,omitempty"`
+	PreCheck     []string               `yaml:"pre_check,omitempty"`
 	ModuleObject module.ModuleInterface
 	Worker       work.Worker
 }
@@ -86,6 +88,7 @@ func (t *Task) run(ctx context.Context, vars map[string]interface{}) error {
 	}
 	PrintfMsg(ctx, "module:%s sh:%s \n", t.ModuleObject.Show(), sh)
 
+	// TODO sudo密码
 	sudoPassword := ""
 
 	if t.NotWait {

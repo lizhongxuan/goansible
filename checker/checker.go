@@ -3,18 +3,19 @@ package checker
 import (
 	"fmt"
 	"goansible/work"
+	"log"
 	"regexp"
 )
 
 type Checker struct {
 	Name         string   `yaml:"name"`
 	Shell        string   `yaml:"cmd"`
-	Output       string   `yaml:"output"`
+	Extract      string   `yaml:"extract"`
 	Regex        string   `yaml:"regex"`
 	SuccessHooks []string `yaml:"success_hooks"`
 	FailHooks    []string `yaml:"fail_hooks"`
-	IgnoreErrors bool     `yaml:"ignore_errors"` // 是否忽略任务错误
 	Work         work.Worker
+	Output       string
 }
 
 var CheckerPoor map[string]*Checker
@@ -45,9 +46,7 @@ func (c *Checker) check() error {
 
 	_, output, err := c.Work.RunOutput(c.Shell)
 	if err != nil {
-		if c.IgnoreErrors {
-			return nil
-		}
+		log.Println("check RunOutput err:", err)
 		return err
 	}
 	if c.Regex != "" {

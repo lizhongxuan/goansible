@@ -1,0 +1,13 @@
+group1:
+  - name: web1
+    ip: 1.1.1.1
+    port: 22
+    username: root
+    password: 123456
+    sudo_password: 123456
+  - name: web2
+    ip: 1.1.1.2
+    port: 22
+    username: root
+    password: 123456
+    sudo_password: 123456

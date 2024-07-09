@@ -1,0 +1,10 @@
+- name: pgbackrest                  # 名称,全局唯一key
+  shell: pgbackrest version         # 检测命令
+  extract: grep -oP 'version\s+\K\d+\.\d+\.\d+' # 输出结果提取命令
+  regex: ^[2-5]\.[0-9]+\.[0-9]+$    # 正则表达式匹配结果
+- name: rsync
+  shell: rsync --version
+  success_hooks:
+    - echo "rsync is healthy"       # 如果检测成功,运行的命令数组
+  fail_hooks:                       # 如果检测失败,运行的命令数组
+    - yum install rsync

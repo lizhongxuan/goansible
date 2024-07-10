@@ -1,4 +1,5 @@
 - name: playbook111
+  hosts: group1
   strategy: liner
   vars:
     DEST_PATH: /var/kingdee/dest

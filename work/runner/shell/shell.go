@@ -28,7 +28,9 @@ var (
 		path.Join(LIB_PATH),
 	}
 )
-var sandbox_fs []byte
+
+var sandbox_fs = `#
+`
 
 func (p *ShellRunner) Run(
 	code string,
@@ -97,7 +99,7 @@ func (p *ShellRunner) InitializeEnvironment(code string, preload string, options
 	temp_code_name := strings.ReplaceAll(uuid.New().String(), "-", "_")
 	temp_code_name = strings.ReplaceAll(temp_code_name, "/", ".")
 
-	script := string(sandbox_fs)
+	script := sandbox_fs
 	if options.EnableNetwork {
 		script = strings.Replace(
 			script,

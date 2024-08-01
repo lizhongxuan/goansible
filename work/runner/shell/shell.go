@@ -1,15 +1,16 @@
 package shell
 
 import (
+	"crypto/rand"
 	"encoding/base64"
 	"fmt"
 	"github.com/google/uuid"
 	"goansible/work/runner"
+	"goansible/work/runner/static"
 	"goansible/work/runner/types"
 	"os"
 	"os/exec"
 	"path"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -27,6 +28,7 @@ var (
 		path.Join(LIB_PATH),
 	}
 )
+var sandbox_fs []byte
 
 func (p *ShellRunner) Run(
 	code string,
@@ -35,6 +37,7 @@ func (p *ShellRunner) Run(
 	preload string,
 	options *types.RunnerOptions,
 ) (chan []byte, chan []byte, chan bool, error) {
+	configuration := static.GetDifySandboxGlobalConfigurations()
 
 	// initialize the environment
 	untrusted_code_path, key, err := p.InitializeEnvironment(code, preload, options)
@@ -55,7 +58,7 @@ func (p *ShellRunner) Run(
 
 		// create a new process
 		cmd := exec.Command(
-			configuration.PythonPath,
+			"bash",
 			untrusted_code_path,
 			LIB_PATH,
 			key,
@@ -90,25 +93,11 @@ func (p *ShellRunner) Run(
 }
 
 func (p *ShellRunner) InitializeEnvironment(code string, preload string, options *types.RunnerOptions) (string, string, error) {
-	if !checkLibAvaliable() {
-		// ensure environment is reversed
-		releaseLibBinary()
-	}
-
 	// create a tmp dir and copy the python script
 	temp_code_name := strings.ReplaceAll(uuid.New().String(), "-", "_")
 	temp_code_name = strings.ReplaceAll(temp_code_name, "/", ".")
 
-	script := strings.Replace(
-		string(sandbox_fs),
-		"{{uid}}", strconv.Itoa(static.SANDBOX_USER_UID), 1,
-	)
-
-	script = strings.Replace(
-		script,
-		"{{gid}}", strconv.Itoa(static.SANDBOX_GROUP_ID), 1,
-	)
-
+	script := string(sandbox_fs)
 	if options.EnableNetwork {
 		script = strings.Replace(
 			script,

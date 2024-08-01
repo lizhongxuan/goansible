@@ -9,6 +9,7 @@ type Dependency struct {
 
 type RunnerOptions struct {
 	EnableNetwork bool `json:"enable_network"`
+	WorkerTimeout int  `json:"worker_timeout"`
 }
 
 func (r *RunnerOptions) Json() string {
